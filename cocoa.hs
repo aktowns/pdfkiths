@@ -11,6 +11,8 @@ import System.IO.Unsafe(unsafePerformIO)
 -- read a bit clearer
 -- TODO: Primitives need to be handled a lot more cleanly.
 type NSUInteger = CULong 
+type NSBool = CInt
+
 newtype Class = Class (Ptr ())
 newtype Selector = Selector (Ptr ())
 newtype Method = Method (Ptr ())
@@ -24,6 +26,11 @@ data NSString a = NSString Id
 
 class Idable a where
   idVal :: a -> Id
+
+nsYES :: NSBool
+nsYES = 1
+nsNO :: NSBool
+nsNO  = 0
 
 -- imports
 -- Method class_getClassMethod(Class aClass, SEL aSelector)
@@ -89,6 +96,11 @@ foreign import ccall "msgSend" objc_msgSend'CU
 foreign import ccall "msgSend" objc_msgSend'CU'
   :: Id -> Selector -> NSUInteger -> NSUInteger
 
+foreign import ccall "msgSend" objc_msgSendBL1
+  :: Id -> Selector -> Id -> NSBool
+foreign import ccall "msgSend" objc_msgSendBL2
+  :: Id -> Selector -> Id -> Id -> NSBool
+
 -- return class for name
 getClass :: [Char] -> Id
 getClass name = unsafePerformIO ((newCString name) >>= objc_getClass)
@@ -109,6 +121,18 @@ newNSString val = NSString (unsafePerformIO ((newCString val) >>= \str ->
 -- retrieve the underlying Id type from an NSString
 getNSStringId :: (NSString Id) -> Id
 getNSStringId (NSString n) = n
+
+nsboolToBool :: NSBool -> Bool 
+nsboolToBool bl = bl == 1
+
+isEqualToString :: (NSString Id) -> (NSString Id) -> Bool 
+isEqualToString str1 str2 =
+  let string1 = (idVal str1) in 
+  let string2 = (idVal str2) in
+  nsboolToBool ((string1 `objc_msgSendBL1` "isEqualToString:") string2)
+
+instance Eq (NSString Id) where 
+  (==) x y = x `isEqualToString` y
 
 -- overloaded strings ftw!
 instance IsString Id where 

@@ -8,6 +8,19 @@ type PdfDocument = Id
 type PDFPage = Id
 type PDFAnnotation = Id
 
+type PDFAnnotationButtonWidget = PDFAnnotation
+type PDFAnnotationCircle = PDFAnnotation
+type PDFAnnotationFreeText = PDFAnnotation
+type PDFAnnotationInk = PDFAnnotation
+type PDFAnnotationLine = PDFAnnotation
+type PDFAnnotationLink = PDFAnnotation
+type PDFAnnotationMarkup = PDFAnnotation
+type PDFAnnotationPopup = PDFAnnotation
+type PDFAnnotationSquare = PDFAnnotation
+type PDFAnnotationStamp = PDFAnnotation
+type PDFAnnotationText = PDFAnnotation
+type PDFAnnotationTextWidget = PDFAnnotation
+
 -- NSURL
 fileURLWithPath :: (NSString Id) -> Id
 fileURLWithPath path = ("NSURL" $<<- "fileURLWithPath:") [(idVal path)]
@@ -45,3 +58,14 @@ pageCount doc = (doc `msgSendCU` "pageCount") []
 
 annotations :: PDFPage -> [PDFAnnotation]
 annotations page = arrayToList (page $<- "annotations")
+
+annotationType :: PDFAnnotation -> (NSString Id)
+annotationType anno = NSString (anno $<- "type")
+
+annotationIsLink :: PDFAnnotation -> Bool 
+annotationIsLink anno = (annotationType anno) == "PDFAnnotationLink"
+
+annotationLinks :: PDFPage -> [PDFAnnotationLink]
+annotationLinks page = 
+  filter annotationIsLink (annotations page)
+
