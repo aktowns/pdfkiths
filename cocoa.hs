@@ -86,6 +86,8 @@ msgSendCU kl me [x1,x2,x3,x4,x5] = objc_msgSendCU5 kl me x1 x2 x3 x4 x5
 
 foreign import ccall "msgSend" objc_msgSend'CU 
   :: Id -> Selector -> NSUInteger -> Id
+foreign import ccall "msgSend" objc_msgSend'CU'
+  :: Id -> Selector -> NSUInteger -> NSUInteger
 
 -- return class for name
 getClass :: [Char] -> Id
