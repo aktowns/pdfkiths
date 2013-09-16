@@ -43,7 +43,7 @@ isEqualToString' str1 str2 = unsafePerformIO (str1 `isEqualToString` str2)
 -- TODO: A way to group all the NSObject instances under the one set of functions 
 -- using pattern matching? or ADT w/ DataTypes? 
 -- |Retrieve the underlying 'Id' type from an 'NSObject'
-getStringId :: (TyNSString a) -> Id
+getStringId :: TyNSString a -> Id
 getStringId (TyNSString a) = a
 
 -- |Wrap 'IO' 'Id' object in 'TyNSString'

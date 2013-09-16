@@ -40,7 +40,7 @@ library
   includes: objch.h
 
 executable testannotations
-  main-is: testannotations.hs
+  main-is: examples/testannotations.hs
   ghc-options: -Wall -threaded
   build-depends: base >=4.6 && <4.7, pdfkiths
   cc-options: -Wall

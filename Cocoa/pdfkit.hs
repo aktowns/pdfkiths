@@ -34,7 +34,7 @@ initWithData dat = do
   allocDoc <- "PDFDocument" $<- "alloc"
   (allocDoc $<<- "initWithData:") [dat]
 
-initWithURL :: (TyNSURL Id) -> IO PDFDocument
+initWithURL :: TyNSURL Id -> IO PDFDocument
 initWithURL url = do 
   allocDoc <- "PDFDocument" $<- "alloc"
   (allocDoc $<<- "initWithURL:") [getURLId url]
@@ -45,11 +45,11 @@ documentURL :: PDFDocument -> IO (TyNSURL Id)
 documentURL doc = toNSURL $ doc $<- "documentURL"
 
 -- |Returns the major version of the document.
-majorVersion :: PDFDocument -> IO (NSInteger)
+majorVersion :: PDFDocument -> IO NSInteger
 majorVersion doc = doc $<- "majorVersion" >>= id2nsinteger
 
 -- |Returns the minor version of the document.
-minorVersion :: PDFDocument -> IO (NSInteger)
+minorVersion :: PDFDocument -> IO NSInteger
 minorVersion doc = doc $<- "minorVersion" >>= id2nsinteger
 
 -- |Returns a string representing the textual content for the entire document.
@@ -86,20 +86,19 @@ pageAtIndex doc index = do
 
 -- |Gets the index number for the specified page.
 indexForPage :: PDFDocument -> PDFPage -> IO NSUInteger
-indexForPage doc page = do
-  (doc $<<- "indexForPage:") [page] >>= id2nsuinteger
+indexForPage doc page = (doc $<<- "indexForPage:") [page] >>= id2nsuinteger
 
 -- |Inserts a page at the specified index point.
 insertPageAtIndex :: PDFDocument -> PDFPage -> NSUInteger -> IO ()
 insertPageAtIndex doc page index = do 
   castedIndex <- nsuinteger2id index
-  (doc $<<- "insertPage:atIndex:") [page, castedIndex]
+  _ <- (doc $<<- "insertPage:atIndex:") [page, castedIndex]
   return ()
 
 removePageAtIndex :: PDFDocument -> NSUInteger -> IO ()
 removePageAtIndex doc index = do
   castedIndex <- nsuinteger2id index
-  (doc $<<- "removePageAtIndex:") [castedIndex]
+  _ <- (doc $<<- "removePageAtIndex:") [castedIndex]
   return ()
 
 -- ** Managing Find Operations

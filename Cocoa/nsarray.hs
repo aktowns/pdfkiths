@@ -30,7 +30,7 @@ arrayToList array = do
   sequence [ arrayObjectAtIndex array i| i <- [0..(len - 1)] ]
 
 -- |Retrieve the underlying 'Id' type from an 'NSObject'
-getArrayId :: (TyNSArray a) -> Id
+getArrayId :: TyNSArray a -> Id
 getArrayId (TyNSArray a) = a
 
 -- |Wrap 'IO' 'Id' object in 'TyNSArray'

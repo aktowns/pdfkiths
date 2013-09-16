@@ -14,7 +14,7 @@ data TyNSURL a = TyNSURL Id
 -- * Functions
 
 -- |Retrieve the underlying 'Id' type from an 'NSObject'
-getURLId :: (TyNSURL a) -> Id
+getURLId :: TyNSURL a -> Id
 getURLId (TyNSURL a) = a
 
 -- |Wrap 'IO' 'Id' object in 'TyNSURL'
@@ -29,9 +29,9 @@ fileURLWithPath path = do
   return (TyNSURL url)
 
 -- |Retrieve path specified by the NSURL as a string. equiv to: /[url path];/
-fileURLPath :: (TyNSURL Id) -> IO String 
+fileURLPath :: TyNSURL Id -> IO String 
 fileURLPath url = do 
-  furl <- (getURLId url) $<- "path"
+  furl <- getURLId url $<- "path"
   nsstringToString $ TyNSString furl
 
 -- instances
