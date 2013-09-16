@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings,ForeignFunctionInterface,FlexibleInstances,DataKinds,BangPatterns #-}
+{-# LANGUAGE ForeignFunctionInterface,OverloadedStrings,FlexibleInstances #-}
 
 module Cocoa where
 
@@ -61,6 +61,12 @@ foreign import ccall "msgSend4" objc_msgSend4
   :: Id -> Selector -> Id -> Id -> Id -> Id -> IO Id
 foreign import ccall "msgSend5" objc_msgSend5 
   :: Id -> Selector -> Id -> Id -> Id -> Id -> Id -> IO Id
+foreign import ccall "msgSend6" objc_msgSend6 
+  :: Id -> Selector -> Id -> Id -> Id -> Id -> Id -> Id -> IO Id
+foreign import ccall "msgSend7" objc_msgSend7 
+  :: Id -> Selector -> Id -> Id -> Id -> Id -> Id -> Id -> Id -> IO Id
+foreign import ccall "msgSend8" objc_msgSend8 
+  :: Id -> Selector -> Id -> Id -> Id -> Id -> Id -> Id -> Id -> Id -> IO Id
 
 msgSend :: Id -> Selector -> [Id] -> IO Id
 msgSend kl me [] = objc_msgSend kl me
@@ -69,10 +75,10 @@ msgSend kl me [x1,x2] = objc_msgSend2 kl me x1 x2
 msgSend kl me [x1,x2,x3] = objc_msgSend3 kl me x1 x2 x3
 msgSend kl me [x1,x2,x3,x4] = objc_msgSend4 kl me x1 x2 x3 x4
 msgSend kl me [x1,x2,x3,x4,x5] = objc_msgSend5 kl me x1 x2 x3 x4 x5
+msgSend kl me [x1,x2,x3,x4,x5,x6] = objc_msgSend6 kl me x1 x2 x3 x4 x5 x6
+msgSend kl me [x1,x2,x3,x4,x5,x6,x7] = objc_msgSend7 kl me x1 x2 x3 x4 x5 x6 x7
+msgSend kl me [x1,x2,x3,x4,x5,x6,x7,x8] = objc_msgSend8 kl me x1 x2 x3 x4 x5 x6 x7 x8
 msgSend _ _ _ = error "To many arguments to msgSend"
-
-foreign import ccall "msgSend" objc_msgSendCS
-  :: Id -> Selector -> IO CString
 
 foreign import ccall "nilPtr" nilPtr :: Id
 
@@ -83,19 +89,21 @@ foreign import ccall "id2NSUInteger" id2nsuinteger :: Id -> IO NSUInteger
 foreign import ccall "NSUInteger2id" nsuinteger2id :: NSUInteger -> IO Id
 foreign import ccall "id2Bool" id2bool :: Id -> IO NSBool
 foreign import ccall "Bool2id" bool2id :: NSBool -> IO Id
+foreign import ccall "id2Cstr" id2cstr :: Id -> IO CString
+foreign import ccall "Cstr2id" cstr2id :: CString -> IO Id
 
 -- return class for name
-getClass :: [Char] -> IO Id
-getClass name = (newCString name) >>= objc_getClass
+getClass :: String -> IO Id
+getClass name = newCString name >>= objc_getClass
 
-getClass' :: [Char] -> Id
+getClass' :: String -> Id
 getClass' name = unsafePerformIO (getClass name)
 
 -- @selector(..)
-registerName :: [Char] -> IO Selector
-registerName name = (newCString name) >>= sel_registerName
+registerName :: String -> IO Selector
+registerName name = newCString name >>= sel_registerName
 
-registerName' :: [Char] -> Selector
+registerName' :: String -> Selector
 registerName' name = unsafePerformIO (registerName name)
 
 -- NSString creation
@@ -103,47 +111,48 @@ foreign import ccall "msgSend1" cStringMsgSend1
   :: Id -> Selector -> CString -> IO Id
 
 -- [[NSString alloc] initWithUTF8String: "CStr"]];
-newNSString :: [Char] -> IO (NSString Id)
+newNSString :: String -> IO (NSString Id)
 newNSString val = do
   cStr <- newCString val
   nsstr <- "NSString" $<- "alloc"
   string <- cStringMsgSend1 nsstr "initWithUTF8String:" cStr
   return $ NSString string
 
-newNSString' :: [Char] -> (NSString Id)
+newNSString' :: String -> NSString Id
 newNSString' val = unsafePerformIO $ newNSString val
 
 -- retrieve the underlying Id type from an NSString
-getNSStringId :: (NSString Id) -> Id
+getNSStringId :: NSString Id -> Id
 getNSStringId (NSString n) = n
 
 nsboolToBool :: NSBool -> Bool 
 nsboolToBool bl = bl == nsYES
 
-nsstringToString :: (NSString Id) -> IO String
+nsstringToString :: NSString Id -> IO String
 nsstringToString str = do
-  cStr <- (idVal str) `objc_msgSendCS` "UTF8String"
-  peekCString cStr
+  cStr <- idVal str $<- "UTF8String"
+  id2cstr cStr >>= peekCString
 
-isEqualToString :: (NSString Id) -> (NSString Id) -> Bool 
-isEqualToString str1 str2 =
-  let string1 = (idVal str1) in 
-  let string2 = (idVal str2) in
-  nsboolToBool $ unsafePerformIO $ 
-    ((string1 $<<- "isEqualToString:") [string2]) >>= id2bool
+isEqualToString :: NSString Id -> NSString Id -> IO Bool 
+isEqualToString str1 str2 = do 
+  nsbool <- (idVal str1 $<<- "isEqualToString:") [idVal str2] >>= id2bool 
+  return (nsboolToBool nsbool)
+
+isEqualToString' :: NSString Id -> NSString Id -> Bool 
+isEqualToString' str1 str2 = unsafePerformIO (str1 `isEqualToString` str2)
 
 instance Eq (NSString Id) where 
-  (==) x y = x `isEqualToString` y
+  (==) x y = x `isEqualToString'` y
 
 -- overloaded strings ftw!
 instance IsString Id where 
-  fromString v = getClass' v
+  fromString = getClass'
 
 instance IsString Selector where
-  fromString v = registerName' v
+  fromString = registerName'
 
 instance IsString (NSString Id) where
-  fromString v = newNSString' v
+  fromString = newNSString'
 
 -- "receiver" $<- "selector"
 ($<-) :: Id -> Selector -> IO Id
@@ -151,18 +160,33 @@ instance IsString (NSString Id) where
 
 -- "receiver" $<<- "selector" ["argument"]
 ($<<-) :: Id -> Selector -> [Id] -> IO Id
-($<<-) i s a = msgSend i s a
+($<<-) = msgSend
 
--- [[NSAutoreleasePool alloc] init];
+($<~) :: IO Id -> IO Selector -> IO Id
+($<~) i s = do
+  uwid <- i
+  uwsel <- s
+  msgSend uwid uwsel []
+
+($<<~) :: IO Id -> IO Selector -> [IO Id] -> IO Id 
+($<<~) i s a = do
+  uwid <- i 
+  uwsel <- s
+  args <- sequence a
+  msgSend uwid uwsel args
+
+-- |Allocates a new autorelease pool, 'newAutoreleasePool' is the
+-- equivalent of `[[NSAutoreleasePool alloc] init];`
 newAutoreleasePool :: IO Id 
 newAutoreleasePool = do 
   poolAlloc <- "NSAutoreleasePool" $<- "alloc"
   poolAlloc $<- "init"
 
--- [pool release];
+-- |Deallocates an autorelease pool, 'delAutoreleasePool' is the 
+-- equivalent of `[pool release];`
 delAutoreleasePool :: Id -> IO ()
 delAutoreleasePool pool = do 
-  !_ <- pool $<- "release"
+  _ <- pool $<- "release"
   return ()
 
 -- [[NSRunloop currentRunLoop] run];

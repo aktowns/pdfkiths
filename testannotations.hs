@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings,BangPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 import Cocoa
@@ -19,7 +19,7 @@ main = do
   linkDestinations <-  mapM annotationLinkURL links 
 
   putStrLn "Annotations:"
-  forM_ linkDestinations (\x -> putStrLn ("\t" ++ x))
+  forM_ linkDestinations (\x -> putStrLn ('\t' : x))
 
   -- threadDelay (1000000 * 10) -- sleep for 10s
 

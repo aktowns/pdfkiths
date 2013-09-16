@@ -24,8 +24,8 @@ type PDFAnnotationTextWidget = PDFAnnotation
 
 
 -- NSURL
-fileURLWithPath :: (NSString Id) -> (IO Id)
-fileURLWithPath path = ("NSURL" $<<- "fileURLWithPath:") [(idVal path)]
+fileURLWithPath :: NSString Id -> IO Id
+fileURLWithPath path = ("NSURL" $<<- "fileURLWithPath:") [idVal path]
 
 fileURLPath :: Id -> IO String 
 fileURLPath url = do 
@@ -48,7 +48,7 @@ arrayObjectAtIndex array index = do
 arrayToList :: Id -> IO [Id]
 arrayToList array = do
   len <- arrayCount array
-  sequence $ [ arrayObjectAtIndex array i| i <- [0..(len - 1)] ]
+  sequence [ arrayObjectAtIndex array i| i <- [0..(len - 1)] ]
 
 -- NSData
 dataWithContentsOfURL :: Id -> IO Id
@@ -99,7 +99,7 @@ annotationLinkURL :: PDFAnnotationLink -> IO String
 annotationLinkURL anno = do
   destURL <- anno $<- "URL"
   if destURL == nilPtr
-    then do return ""
+    then return ""
   else do
     destStr <- destURL $<- "absoluteString"
     nsstringToString (NSString destStr)
