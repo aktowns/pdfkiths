@@ -18,3 +18,6 @@ id msgSend4 (id klass, SEL sel, void* arg1, void* arg2, void* arg3, void* arg4) 
 id msgSend5 (id klass, SEL sel, void* arg1, void* arg2, void* arg3, void* arg4, void* arg5) {
   return objc_msgSend(klass, sel, arg1, arg2, arg3, arg4, arg5);
 }
+id nilPtr () {
+  return nil;
+}

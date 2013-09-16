@@ -50,10 +50,10 @@ cabal-version:       >=1.10
 
 
 library
-  exposed-modules: PdfKit
-  other-modules: Cocoa
-  other-extensions:    ForeignFunctionInterface
-  frameworks: Cocoa Foundation CoreFoundation AppKit Quartz PdfKit
+  exposed-modules: Cocoa Cocoa.PdfKit
+--  other-modules: 
+  other-extensions:    ForeignFunctionInterface OverloadedStrings
+  frameworks: Cocoa Foundation CoreFoundation AppKit Quartz
   ghc-options: -Wall -debug -threaded
   extra-libraries: objc
   build-depends:       base >=4.6 && <4.7  
@@ -61,3 +61,10 @@ library
   cc-options: -Wall
   c-sources: objch.c
   includes: objch.h
+
+executable testannotations
+  main-is: testannotations.hs
+  ghc-options: -Wall -debug -threaded
+  build-depends:       base >=4.6 && <4.7, pdfkiths
+  cc-options: -Wall
+  default-language:    Haskell2010
