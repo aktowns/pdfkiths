@@ -5,6 +5,7 @@ module Cocoa.PdfKit where
 import Cocoa
 import Control.Monad(filterM)
 
+-- * Types
 type PDFDocument = Id
 type PDFPage = Id
 type PDFAnnotation = Id
@@ -22,48 +23,16 @@ type PDFAnnotationStamp = PDFAnnotation
 type PDFAnnotationText = PDFAnnotation
 type PDFAnnotationTextWidget = PDFAnnotation
 
-
--- NSURL
-fileURLWithPath :: NSString Id -> IO Id
-fileURLWithPath path = ("NSURL" $<<- "fileURLWithPath:") [idVal path]
-
-fileURLPath :: Id -> IO String 
-fileURLPath url = do 
-  furl <- url $<- "path"
-  nsstringToString $ NSString furl
-
--- NSArray
-arrayCount :: Id -> IO NSUInteger
-arrayCount array = do
-  count <- array $<- "count"
-  id2nsuinteger count
-
--- - (id)objectAtIndex:(NSUInteger)index
-arrayObjectAtIndex :: Id -> NSUInteger -> IO Id
-arrayObjectAtIndex array index = do
-  idindex <- nsuinteger2id index
-  (array $<<- "objectAtIndex:") [idindex]
-
--- NSArray to list
-arrayToList :: Id -> IO [Id]
-arrayToList array = do
-  len <- arrayCount array
-  sequence [ arrayObjectAtIndex array i| i <- [0..(len - 1)] ]
-
--- NSData
-dataWithContentsOfURL :: Id -> IO Id
-dataWithContentsOfURL aURL = ("NSData" $<<- "dataWithContentsOfURL:") [aURL]
-
--- PdfKit
+-- * PdfKit Functions
 initWithData :: Id -> IO PDFDocument
 initWithData dat = do 
   allocDoc <- "PDFDocument" $<- "alloc"
   (allocDoc $<<- "initWithData:") [dat]
 
-initWithURL :: Id -> IO PDFDocument
+initWithURL :: (NSURL Id) -> IO PDFDocument
 initWithURL url = do 
   allocDoc <- "PDFDocument" $<- "alloc"
-  (allocDoc $<<- "initWithURL:") [url]
+  (allocDoc $<<- "initWithURL:") [getURLId url]
 
 pageAtIndex :: PDFDocument -> NSUInteger -> IO PDFPage 
 pageAtIndex doc index = do 
