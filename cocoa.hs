@@ -11,6 +11,8 @@ import System.IO.Unsafe(unsafePerformIO)
 -- read a bit clearer
 -- TODO: Primitives need to be handled a lot more cleanly.
 type NSUInteger = CULong 
+type NSInteger = CInt
+
 type NSBool = CInt
 
 newtype Class = Class (Ptr ())
@@ -69,44 +71,18 @@ msgSend kl me [x1,x2,x3,x4] = objc_msgSend4 kl me x1 x2 x3 x4
 msgSend kl me [x1,x2,x3,x4,x5] = objc_msgSend5 kl me x1 x2 x3 x4 x5
 msgSend _ _ _ = error "To many arguments to msgSend"
 
--- Variations, is there any easier way to recast?
--- objc_msgSend -> NSUInteger
-foreign import ccall "msgSend" objc_msgSendCU
-  :: Id -> Selector -> IO NSUInteger
-foreign import ccall "msgSend1" objc_msgSendCU1 
-  :: Id -> Selector -> Id -> IO NSUInteger
-foreign import ccall "msgSend2" objc_msgSendCU2 
-  :: Id -> Selector -> Id -> Id -> IO NSUInteger
-foreign import ccall "msgSend3" objc_msgSendCU3 
-  :: Id -> Selector -> Id -> Id -> Id -> IO NSUInteger
-foreign import ccall "msgSend4" objc_msgSendCU4 
-  :: Id -> Selector -> Id -> Id -> Id -> Id -> IO NSUInteger
-foreign import ccall "msgSend5" objc_msgSendCU5 
-  :: Id -> Selector -> Id -> Id -> Id -> Id -> Id -> IO NSUInteger
-
-msgSendCU :: Id -> Selector -> [Id] -> IO NSUInteger
-msgSendCU kl me [] = objc_msgSendCU kl me
-msgSendCU kl me [x1] = objc_msgSendCU1 kl me x1
-msgSendCU kl me [x1,x2] = objc_msgSendCU2 kl me x1 x2
-msgSendCU kl me [x1,x2,x3] = objc_msgSendCU3 kl me x1 x2 x3
-msgSendCU kl me [x1,x2,x3,x4] = objc_msgSendCU4 kl me x1 x2 x3 x4
-msgSendCU kl me [x1,x2,x3,x4,x5] = objc_msgSendCU5 kl me x1 x2 x3 x4 x5
-msgSendCU _ _ _ = error "To many arguments to msgSendCU"
-
-foreign import ccall "msgSend" objc_msgSend'CU 
-  :: Id -> Selector -> NSUInteger -> IO Id
-foreign import ccall "msgSend" objc_msgSend'CU'
-  :: Id -> Selector -> NSUInteger -> IO NSUInteger
-
-foreign import ccall "msgSend" objc_msgSendBL1
-  :: Id -> Selector -> Id -> IO NSBool
-foreign import ccall "msgSend" objc_msgSendBL2
-  :: Id -> Selector -> Id -> Id -> IO NSBool
-
 foreign import ccall "msgSend" objc_msgSendCS
   :: Id -> Selector -> IO CString
 
 foreign import ccall "nilPtr" nilPtr :: Id
+
+-- hacks because msgSend can return primitives, instead of the id struct.. 
+foreign import ccall "id2NSInteger" id2nsinteger :: Id -> IO NSInteger
+foreign import ccall "NSInteger2id" nsInteger2id :: NSInteger -> IO Id
+foreign import ccall "id2NSUInteger" id2nsuinteger :: Id -> IO NSUInteger
+foreign import ccall "NSUInteger2id" nsuinteger2id :: NSUInteger -> IO Id
+foreign import ccall "id2Bool" id2bool :: Id -> IO NSBool
+foreign import ccall "Bool2id" bool2id :: NSBool -> IO Id
 
 -- return class for name
 getClass :: [Char] -> IO Id
@@ -154,7 +130,7 @@ isEqualToString str1 str2 =
   let string1 = (idVal str1) in 
   let string2 = (idVal str2) in
   nsboolToBool $ unsafePerformIO $ 
-    ((string1 `objc_msgSendBL1` "isEqualToString:") string2)
+    ((string1 $<<- "isEqualToString:") [string2]) >>= id2bool
 
 instance Eq (NSString Id) where 
   (==) x y = x `isEqualToString` y
@@ -184,8 +160,10 @@ newAutoreleasePool = do
   poolAlloc $<- "init"
 
 -- [pool release];
-delAutoreleasePool :: Id -> IO Id
-delAutoreleasePool pool = do pool $<- "release"
+delAutoreleasePool :: Id -> IO ()
+delAutoreleasePool pool = do 
+  !_ <- pool $<- "release"
+  return ()
 
 -- [[NSRunloop currentRunLoop] run];
 startRunloop :: IO ()

@@ -33,12 +33,16 @@ fileURLPath url = do
   nsstringToString $ NSString furl
 
 -- NSArray
-arrayCount :: Id -> (IO NSUInteger)
-arrayCount array = (array `msgSendCU` "count") []
+arrayCount :: Id -> IO NSUInteger
+arrayCount array = do
+  count <- array $<- "count"
+  id2nsuinteger count
 
 -- - (id)objectAtIndex:(NSUInteger)index
-arrayObjectAtIndex :: Id -> NSUInteger -> (IO Id)
-arrayObjectAtIndex array index = (array `objc_msgSend'CU` "objectAtIndex:") index
+arrayObjectAtIndex :: Id -> NSUInteger -> IO Id
+arrayObjectAtIndex array index = do
+  idindex <- nsuinteger2id index
+  (array $<<- "objectAtIndex:") [idindex]
 
 -- NSArray to list
 arrayToList :: Id -> IO [Id]
@@ -62,10 +66,14 @@ initWithURL url = do
   (allocDoc $<<- "initWithURL:") [url]
 
 pageAtIndex :: PDFDocument -> NSUInteger -> IO PDFPage 
-pageAtIndex doc index = (doc `objc_msgSend'CU` "pageAtIndex:") index
+pageAtIndex doc index = do 
+  idindex <- nsuinteger2id index
+  (doc $<<- "pageAtIndex:") [idindex]
 
 pageCount :: PDFDocument -> IO NSUInteger
-pageCount doc = (doc `msgSendCU` "pageCount") []
+pageCount doc = do 
+  count <- doc $<- "pageCount"
+  id2nsuinteger count
 
 annotations :: PDFPage -> IO [PDFAnnotation]
 annotations page = do 
