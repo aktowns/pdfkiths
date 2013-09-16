@@ -8,29 +8,33 @@ import Data.String
 import System.IO.Unsafe(unsafePerformIO)
 
 -- * Objective-C like Type mappings
-
--- | just to make things read a bit clearer
-
-
 -- TODO: Primitives need to be handled a lot more cleanly.
 
--- | Treat 'NSUInteger' like 'CULong'.. this is 64-bit dependent.
+-- |Treat 'NSUInteger' like 'CULong'.. this is 64-bit dependent.
 type NSUInteger = CULong 
+-- |Treat 'NSInteger' like 'CInt'.. this is 64-bit dependent.
 type NSInteger = CInt
+-- |Treat NSBool as a CInt (that should be either 1 | 0). 
+-- It seems most of the NS frameworks use this, instead of C99 booleans.
 type NSBool = CInt
 
+-- |Class, essentially void* as we don't need anything from it.
+-- Just used for passing around.
 newtype Class = Class (Ptr ())
+-- |Selector, essentially void* as we don't need anything from it.
+-- Just used for passing around.
 newtype Selector = Selector (Ptr ())
+-- |Method, essentially void* as we don't need anything from it.
+-- Just used for passing around.
 newtype Method = Method (Ptr ())
+-- |Id, essentially void* as we don't need anything from it.
+-- Just used for passing around.
 newtype Id = Id (Ptr ()) deriving (Eq)
 
-data NSURL a = NSURL Id
-data NSString a = NSString Id
-
--- |/YES/ in obj-c. this is a 'Int' with the value /1/
+-- |[YES] in obj-c. this is a 'Int' with the value /1/
 nsYES :: NSBool
 nsYES = 1
--- |/NO/ in obj-c. this is a 'Int' with the value /0/
+-- |[NO] in obj-c. this is a 'Int' with the value /0/
 nsNO :: NSBool
 nsNO  = 0
 
@@ -89,14 +93,6 @@ foreign import ccall "Bool2id" bool2id :: NSBool -> IO Id
 foreign import ccall "id2Cstr" id2cstr :: Id -> IO CString
 foreign import ccall "Cstr2id" cstr2id :: CString -> IO Id
 
--- * Type classes
--- |Used to create light wrappers around objects that are based 'Id'
--- this could be used for any NSObject object. its only used for 'NSString'
--- at the moment so overloaded strings can auto convert to NSString (and "Data.Eq" to compare)
-class NSObject a where
-  -- |The underlying 'Id' object
-  idVal :: a -> Id
-
 -- * Functions
 
 -- |Sends 'Selector' to 'Id'. a /message/ to an /object/. 
@@ -112,7 +108,6 @@ msgSend kl me [x1,x2,x3,x4,x5,x6,x7] = objc_msgSend7 kl me x1 x2 x3 x4 x5 x6 x7
 msgSend kl me [x1,x2,x3,x4,x5,x6,x7,x8] = objc_msgSend8 kl me x1 x2 x3 x4 x5 x6 x7 x8
 msgSend _ _ _ = error "To many arguments to msgSend"
 
-
 -- |Returns a class 'Id' for the given 'String'.
 getClass :: String -> IO Id
 getClass name = newCString name >>= objc_getClass
@@ -122,57 +117,18 @@ getClass name = newCString name >>= objc_getClass
 getClass' :: String -> Id
 getClass' name = unsafePerformIO (getClass name)
 
--- |Creates a selector, this is like @selector() in obj-c.
+-- |Creates a selector, this is like \@selector() in obj-c.
 registerName :: String -> IO Selector
 registerName name = newCString name >>= sel_registerName
 
--- |Creates a selector, this is like @selector() in obj-c.
+-- |Creates a selector, this is like \@selector() in obj-c.
 -- this function uses 'unsafePerformIO'
 registerName' :: String -> Selector
 registerName' name = unsafePerformIO (registerName name)
 
--- TODO: A way to group all the NSObject instances under the one set of functions 
--- using pattern matching? or ADT w/ DataTypes? 
--- |Retrieve the underlying 'Id' type from an 'NSObject'
-getStringId :: (NSString a) -> Id
-getStringId (NSString a) = a
--- |Retrieve the underlying 'Id' type from an 'NSObject'
-getURLId :: (NSURL a) -> Id
-getURLId (NSURL a) = a
-
--- |Create a new 'NSString'
-newNSString :: String -> IO (NSString Id)
-newNSString val = do
-  cStr <- newCString val >>= cstr2id
-  nsstr <- "NSString" $<- "alloc"
-  string <- (nsstr $<<- "initWithUTF8String:") [cStr]
-  return $ NSString string
-
--- |Create a new 'NSString'
--- this function uses 'unsafePerformIO'
-newNSString' :: String -> NSString Id
-newNSString' val = unsafePerformIO $ newNSString val
-
 -- |Convert an 'NSBool' to 'Bool'
 nsboolToBool :: NSBool -> Bool 
 nsboolToBool bl = bl == nsYES
-
--- |Convert an 'NSString' to an 'IO' 'String'
-nsstringToString :: NSString Id -> IO String
-nsstringToString str = do
-  cStr <- idVal str $<- "UTF8String"
-  id2cstr cStr >>= peekCString
-
--- |Checks equality of two 'NSString', uses /isEqualToString:/ internally.
-isEqualToString :: NSString Id -> NSString Id -> IO Bool 
-isEqualToString str1 str2 = do 
-  nsbool <- (idVal str1 $<<- "isEqualToString:") [idVal str2] >>= id2bool 
-  return (nsboolToBool nsbool)
-
--- |Checks equality of two 'NSString', uses /isEqualToString:/ internally.
--- this function uses 'unsafePerformIO'
-isEqualToString' :: NSString Id -> NSString Id -> Bool 
-isEqualToString' str1 str2 = unsafePerformIO (str1 `isEqualToString` str2)
 
 -- |Allocates a new autorelease pool, 'newAutoreleasePool' is the
 -- equivalent of /[[NSAutoreleasePool alloc] init];/
@@ -197,53 +153,6 @@ startRunloop = do
   mainRunloop <- "NSRunLoop" $<- "mainRunLoop"
   _ <- mainRunloop $<- "run"
   return ()
-
--- |Returns a string representation of the current obj-c object. 
--- This is the equivalent of /[x description];/
-nsObjectDescribe :: Id -> IO String 
-nsObjectDescribe obj = do
-  descString <- obj $<- "description"
-  nsstringToString $ NSString descString
-
--- * NSArray Functions
--- |Items in array equiv to: /[array count];/
-arrayCount :: Id -> IO NSUInteger
-arrayCount array = do
-  count <- array $<- "count"
-  id2nsuinteger count
-
--- |Retrieve object at specified index equiv to: /[array objectAtIndex:index];/
-arrayObjectAtIndex :: Id -> NSUInteger -> IO Id
-arrayObjectAtIndex array index = do
-  idindex <- nsuinteger2id index
-  (array $<<- "objectAtIndex:") [idindex]
-
--- |Convert NSArray to list
-arrayToList :: Id -> IO [Id]
-arrayToList array = do
-  len <- arrayCount array
-  sequence [ arrayObjectAtIndex array i| i <- [0..(len - 1)] ]
-
--- * NSURL Functions
--- |Specify path to file returning an NSURL. 
--- equiv to: /[NSURL fileURLWithPath:@""];/
-fileURLWithPath :: NSString Id -> IO (NSURL Id)
-fileURLWithPath path = do
-  url <- ("NSURL" $<<- "fileURLWithPath:") [idVal path]
-  return (NSURL url)
-
--- |Retrieve path specified by the NSURL as a string. equiv to: /[url path];/
-fileURLPath :: (NSURL Id) -> IO String 
-fileURLPath url = do 
-  furl <- (getURLId url) $<- "path"
-  nsstringToString $ NSString furl
-
--- * NSData Functions
--- |Return NSData from path specified by an NSURL. 
--- equiv to: /[NSData dataWithContentsOfURL:url];/
-dataWithContentsOfURL :: Id -> IO Id
-dataWithContentsOfURL aURL = ("NSData" $<<- "dataWithContentsOfURL:") [aURL]
-
 
 -- * Infix operators
 -- |Infix for 'msgSend' with an empty list as args.
@@ -270,11 +179,16 @@ dataWithContentsOfURL aURL = ("NSData" $<<- "dataWithContentsOfURL:") [aURL]
   args <- sequence a
   msgSend uwid uwsel args
 
--- Instances
--- | when checking equality of 'NSString' run 'isEqualToString''
-instance Eq (NSString Id) where 
-  (==) x y = x `isEqualToString'` y
+-- * Type classes
+-- |Used to create light wrappers around objects that are based 'Id'
+-- this could be used for any NSObject object. its only used for 'NSString'
+-- at the moment so overloaded strings can auto convert to NSString (and "Data.Eq" to compare)
+class IsNSObject a where
+  -- |The underlying 'Id' object
+  idVal :: a -> Id
 
+
+-- Instances
 -- |Overload strings for 'Id' with 'getClass''
 instance IsString Id where 
   fromString = getClass'
@@ -282,15 +196,3 @@ instance IsString Id where
 -- |Overload strings for 'Selector' with 'registerName''
 instance IsString Selector where
   fromString = registerName'
-
--- |Overload strings for ('NSString' 'Id') with 'newNSString''
-instance IsString (NSString Id) where
-  fromString = newNSString'
-
--- |'NSString' encases an 'Id'
-instance NSObject (NSString Id) where 
-  idVal = getStringId
-
--- |'NSURL' encases an 'Id'
-instance NSObject (NSURL Id) where
-  idVal = getURLId

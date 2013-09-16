@@ -3,6 +3,7 @@
 module Main where
 import Cocoa
 import Cocoa.PdfKit
+import Cocoa.NSURL
 import Control.Concurrent(forkIO)
 import Control.Monad(forM_)
 

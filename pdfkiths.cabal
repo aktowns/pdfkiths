@@ -26,7 +26,8 @@ source-repository head
   location: git://git@github.com/aktowns/pdfkiths.git
 
 library
-  exposed-modules: Cocoa.PdfKit
+  exposed-modules: 
+    Cocoa.PdfKit Cocoa.NSArray Cocoa.NSData Cocoa.NSURL Cocoa.NSString Cocoa.NSObject
   --  other-modules: 
   other-extensions: ForeignFunctionInterface OverloadedStrings
   frameworks: Cocoa Foundation CoreFoundation AppKit Quartz

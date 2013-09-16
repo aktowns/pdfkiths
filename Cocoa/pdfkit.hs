@@ -3,6 +3,9 @@
 module Cocoa.PdfKit where
 
 import Cocoa
+import Cocoa.NSArray
+import Cocoa.NSURL
+import Cocoa.NSString
 import Control.Monad(filterM)
 
 -- * Types
@@ -29,7 +32,7 @@ initWithData dat = do
   allocDoc <- "PDFDocument" $<- "alloc"
   (allocDoc $<<- "initWithData:") [dat]
 
-initWithURL :: (NSURL Id) -> IO PDFDocument
+initWithURL :: (TyNSURL Id) -> IO PDFDocument
 initWithURL url = do 
   allocDoc <- "PDFDocument" $<- "alloc"
   (allocDoc $<<- "initWithURL:") [getURLId url]
@@ -46,13 +49,13 @@ pageCount doc = do
 
 annotations :: PDFPage -> IO [PDFAnnotation]
 annotations page = do 
-  annots <- page $<- "annotations"
+  annots <- toNSArray $ page $<- "annotations"
   arrayToList annots
 
-annotationType :: PDFAnnotation -> IO (NSString Id)
+annotationType :: PDFAnnotation -> IO (TyNSString Id)
 annotationType anno = do 
   nsstr <- anno $<- "type"
-  return (NSString nsstr)
+  return (TyNSString nsstr)
 
 annotationIsLink :: PDFAnnotation -> IO Bool 
 annotationIsLink anno = do 
@@ -71,4 +74,4 @@ annotationLinkURL anno = do
     then return ""
   else do
     destStr <- destURL $<- "absoluteString"
-    nsstringToString (NSString destStr)
+    nsstringToString (TyNSString destStr)
