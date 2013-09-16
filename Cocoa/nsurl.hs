@@ -17,6 +17,10 @@ data TyNSURL a = TyNSURL Id
 getURLId :: (TyNSURL a) -> Id
 getURLId (TyNSURL a) = a
 
+-- |Wrap 'IO' 'Id' object in 'TyNSURL'
+toNSURL :: IO Id -> IO (TyNSURL Id)
+toNSURL obj = obj >>= \o -> return (TyNSURL o)
+
 -- |Specify path to file returning an NSURL. 
 -- equiv to: /[NSURL fileURLWithPath:@""];/
 fileURLWithPath :: TyNSString Id -> IO (TyNSURL Id)
