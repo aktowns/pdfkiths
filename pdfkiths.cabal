@@ -36,8 +36,8 @@ library
   build-depends: base >=4.6 && <4.7  
   default-language: Haskell2010
   cc-options: -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
-  c-sources: objch.c
-  includes: objch.h
+  c-sources: cfiles/objch.c
+  includes: cfiles/objch.h
 
 executable testannotations
   main-is: examples/testannotations.hs
