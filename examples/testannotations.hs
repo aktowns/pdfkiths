@@ -15,8 +15,6 @@ main = do
 
   filename <- newNSString $ unwords args
 
-  putStrLn $ "Opening: " ++ (show $ unwords args)
-
   pool <- newAutoreleasePool
   _ <- forkIO startRunloop
 

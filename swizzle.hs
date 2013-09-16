@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings,ForeignFunctionInterface #-}
--- |Replace objective-c methods with haskell methods at runtime.
+-- |Replace objective-c methods with haskell functions at runtime.
 --
 -- @
 -- \{\-\# NOINLINE swizzleDescription #-}
@@ -47,7 +47,7 @@ swizzle klass orig new = do
   newMethod <- class_getInstanceMethod klass new
   methIMP <- method_getImplementation newMethod
   methTy <- method_getTypeEncoding newMethod 
-  if (class_addMethod klass orig methIMP methTy) then do
+  if class_addMethod klass orig methIMP methTy then do
     origIMP <- method_getImplementation origMethod
     origTy <- method_getTypeEncoding origMethod 
     _ <- class_replaceMethod klass new origIMP origTy
@@ -55,19 +55,19 @@ swizzle klass orig new = do
   else 
     method_exchangeImplementations origMethod newMethod 
 
--- |Replaces original 'Selector' on instance of an object with new
+-- |Replaces original 'Selector' on instance of an object with the second 'Selector'
 swizzleMethod :: Id -> Selector -> Selector -> IO ()
 swizzleMethod inst orig new = do
   instKlass <- inst $<- "class" >>= id2class
   swizzle instKlass orig new
 
--- |Replaces original selector on instance of an object with haskell 'SwizzleVoid'
+-- |Replaces original 'Selector' on instance of an object with haskell 'SwizzleVoid'
 swizzleHSMethod :: Id -> Selector -> SwizzleVoid -> IO ()
 swizzleHSMethod inst orig new = do 
   instKlass <- inst $<- "class" >>= id2class
   methTy <- newCString "v@:"
   func <- mkSwizzleVoid new 
   let ret = class_addMethod' instKlass "tempMethod" func methTy
-  if ret then do putStrLn "Succesfully swizzled"
-  else putStrLn "No swizzle for you"
+  putStrLn
+    (if ret then "Succesfully swizzled" else "No swizzle for you")
   swizzle instKlass orig "tempMethod" 
