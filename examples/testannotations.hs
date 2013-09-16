@@ -4,15 +4,23 @@ module Main where
 import Cocoa
 import Cocoa.PdfKit
 import Cocoa.NSURL
+import Cocoa.NSString
 import Control.Concurrent(forkIO)
 import Control.Monad(forM_)
+import System.Environment(getArgs)
 
 main :: IO ()
 main = do
+  args <- getArgs
+
+  filename <- newNSString $ unwords args
+
+  putStrLn $ "Opening: " ++ (show $ unwords args)
+
   pool <- newAutoreleasePool
   _ <- forkIO startRunloop
 
-  fileUrl <- fileURLWithPath "P1-1.pdf"
+  fileUrl <- fileURLWithPath filename
   pdfDoc <- initWithURL fileUrl
 
   page <- pageAtIndex pdfDoc 0

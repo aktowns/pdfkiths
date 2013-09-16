@@ -27,7 +27,7 @@ source-repository head
 
 library
   exposed-modules: 
-    Cocoa.PdfKit Cocoa.NSArray Cocoa.NSData Cocoa.NSURL Cocoa.NSString Cocoa.NSObject
+    Cocoa.PdfKit Cocoa.NSArray Cocoa.NSData Cocoa.NSURL Cocoa.NSString Cocoa.NSObject Swizzle
   --  other-modules: 
   other-extensions: ForeignFunctionInterface OverloadedStrings
   frameworks: Cocoa Foundation CoreFoundation AppKit Quartz
@@ -41,6 +41,13 @@ library
 
 executable testannotations
   main-is: examples/testannotations.hs
+  ghc-options: -Wall -threaded
+  build-depends: base >=4.6 && <4.7, pdfkiths
+  cc-options: -Wall
+  default-language: Haskell2010
+
+executable testswizzle
+  main-is: examples/testswizzle.hs
   ghc-options: -Wall -threaded
   build-depends: base >=4.6 && <4.7, pdfkiths
   cc-options: -Wall

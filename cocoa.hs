@@ -27,6 +27,8 @@ newtype Selector = Selector (Ptr ())
 -- |Method, essentially void* as we don't need anything from it.
 -- Just used for passing around.
 newtype Method = Method (Ptr ())
+newtype IMP = IMP (Ptr ())
+
 -- |Id, essentially void* as we don't need anything from it.
 -- Just used for passing around.
 newtype Id = Id (Ptr ()) deriving (Eq)
@@ -39,15 +41,41 @@ nsNO :: NSBool
 nsNO  = 0
 
 -- * FFI imports
--- |ffi import for class_getClassMethod
+-- |Returns a pointer to the data structure describing a 
+-- given class method for a given class.
 foreign import ccall "class_getClassMethod" class_getClassMethod 
   :: Class -> Selector -> IO Method
 
--- |ffi import for objc_getClass
+-- |Returns a specified instance method for a given class.
+foreign import ccall "class_getInstanceMethod" class_getInstanceMethod
+  :: Class -> Selector -> IO Method
+
+-- |Returns the implementation of a method.
+foreign import ccall "method_getImplementation" method_getImplementation
+  :: Method -> IO IMP 
+
+-- |Returns a string describing a method's parameter and return types.
+foreign import ccall "method_getTypeEncoding" method_getTypeEncoding
+  :: Method -> IO CString 
+
+-- |Returns the class definition of a specified class.
 foreign import ccall "objc_getClass" objc_getClass 
   :: CString -> IO Id
 
--- |ffi import for sel_registerName
+-- |Replaces the implementation of a method for a given class.
+foreign import ccall "class_replaceMethod" class_replaceMethod
+  :: Class -> Selector -> IMP -> CString -> IO IMP
+
+-- |Exchanges the implementations of two methods.
+foreign import ccall "method_exchangeImplementations" method_exchangeImplementations
+  :: Method -> Method -> IO ()
+
+-- |Adds a new method to a class with a given name and implementation.
+foreign import ccall "class_addMethod" class_addMethod
+  :: Class -> Selector -> IMP -> CString -> Bool
+
+-- |Registers a method with the Objective-C runtime system, 
+-- maps the method name to a selector, and returns the selector value.
 foreign import ccall "sel_registerName" sel_registerName 
   :: CString -> IO Selector
 
@@ -92,6 +120,8 @@ foreign import ccall "id2Bool" id2bool :: Id -> IO NSBool
 foreign import ccall "Bool2id" bool2id :: NSBool -> IO Id
 foreign import ccall "id2Cstr" id2cstr :: Id -> IO CString
 foreign import ccall "Cstr2id" cstr2id :: CString -> IO Id
+foreign import ccall "id2Class" id2class :: Id -> IO Class 
+foreign import ccall "Class2id" class2id :: Class -> IO Id 
 
 -- * Functions
 

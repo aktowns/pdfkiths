@@ -33,8 +33,10 @@ NSInteger id2NSInteger(id val) { return (NSInteger)val; }
 NSUInteger id2NSUInteger(id val) { return (NSUInteger)val; }
 BOOL id2Bool(id val) { return (BOOL)val; }
 char* id2Cstr (id val) { return (char*)val; }
+Class id2Class (id val) { return (Class)val; }
 
 id NSInteger2id(NSInteger val) { return (id)val; }
 id NSUInteger2id(NSUInteger val) { return (id)val; }
 id Bool2id(BOOL val) { return (id)val; }
 id Cstr2id(char* val) { return (id)val; }
+id Class2id(Class val) { return (id)val; }
