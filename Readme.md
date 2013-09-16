@@ -1,4 +1,4 @@
-Learning as i go, Quartz PdfKit <-> Haskell wrapper
+Learning as i go, Quartz PdfKit <-> Haskell wrapper.
 
 # Obj-c calls
 calls into obj-c are done via `$<-` and `$<<-` for example:
@@ -10,5 +10,5 @@ calls into obj-c are done via `$<-` and `$<<-` for example:
     allocUrl <- "NSUrl" $<- "alloc"
     url <- (allocUrl $<<- "initWithFilePath:") [APath]
 
-check testannotations.hs for more. 
+Check [http://ashleytowns.id.au/pdfkiths/frames.html](http://ashleytowns.id.au/pdfkiths/frames.html) for more info
 
